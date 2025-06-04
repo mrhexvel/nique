@@ -1,0 +1,9 @@
+[project]
+name = "vklib"
+version = "0.1.0"
+description = "Library for vk api"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "niquests>=3.14.1",
+]
