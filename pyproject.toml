@@ -5,5 +5,8 @@ description = "Library for vk api"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "loguru>=0.7.3",
     "niquests>=3.14.1",
+    "pydantic>=2.11.5",
+    "python-dotenv>=1.1.0",
 ]
