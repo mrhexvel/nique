@@ -1,49 +1,53 @@
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable, TypeAlias
 
 from core.dispatcher import MessageContext, MessageHandler
 
-# TODO: implement router and middleware classes for decorators
-_handlers: list[MessageHandler] = []
+HandlerFunc: TypeAlias = Callable[[MessageContext], Awaitable[None]]
 
 
-def on_message(**filters):
+class Router:
     """
-    A decorator for registering a function as a message handler with optional filters.
+    A class to register and manage message event handlers with optional filters.
 
-    Args:
-        filters: Arbitrary keyword arguments representing filter criteria
-                   for message events. These filters are used to match the
-                   attributes of a `MessageContext`.
+    Example usage:
+    ```
+    router = Router()
 
-    Returns:
-        A decorator function that registers the provided function as a
-        MessageHandler with the specified filters.
+    @router.on_message(text="hello")
+    async def greet(ctx: MessageContext):
+        await ctx.answer("zdarova.")
+    ```
     """
 
-    def decorator(func: Callable[[MessageContext], Awaitable[None]]):
-        """A decorator for registering a function as a message handler with optional filters.
+    def __init__(self) -> None:
+        self._handlers: list[MessageHandler] = []
+
+    def on_message(self, **filters: Any) -> Callable[[HandlerFunc], HandlerFunc]:
+        """
+        Register a new message handler with optional filters.
 
         Args:
-            func: The function to register as a message handler.
+            **filters: Keyword arguments used to filter incoming message events.
 
         Returns:
-            The original function, but now registered as a message handler.
+            A decorator that registers the handler function.
         """
 
-        handler = MessageHandler(func, filters)
-        _handlers.append(handler)
-        return func
+        def decorator(func: HandlerFunc) -> HandlerFunc:
+            handler = MessageHandler(func, filters)
+            self._handlers.append(handler)
+            return func
 
-    return decorator
+        return decorator
 
+    def get_handlers(self) -> list[MessageHandler]:
+        """
+        Get all registered message handlers.
 
-def get_message_handlers() -> list[MessageHandler]:
-    """
-    Returns a list of all registered message handlers.
+        Returns:
+            A list of `MessageHandler` instances.
+        """
+        return self._handlers
 
-    Returns:
-        A list of `MessageHandler` instances, each representing a registered
-        message handler function with its associated filter criteria.
-    """
-
-    return _handlers
+    def __repr__(self) -> str:
+        return f"<Router handlers={len(self._handlers)}>"

@@ -41,15 +41,15 @@ class BaseClient:
         :return: Response of the request
         :raises Exception: If the request failed after max retries
         """
-        params = params.copy()
-        params["access_token"] = self.access_token
-        params["v"] = self.api_version
+        copied_params = params.copy()
+        copied_params["access_token"] = self.access_token
+        copied_params["v"] = self.api_version
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 async with asyncio.timeout(self.timeout_seconds):
                     response = await self.session.post(
-                        f"{self.base_url}/{method}", data=params
+                        f"{self.base_url}/{method}", data=copied_params
                     )
 
                     if not response.ok:
@@ -65,6 +65,9 @@ class BaseClient:
                         f"[VK API] error {error.get('error_code')}: {error.get('error_msg')}"
                     )
 
+                logger.debug(
+                    f"Response for method {method} with params {params}: {data}"
+                )
                 return data.get("response", {})
 
             except (asyncio.TimeoutError, niquests.exceptions.Timeout) as e:
