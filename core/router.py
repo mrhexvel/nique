@@ -1,8 +1,9 @@
 from typing import Any, Awaitable, Callable, TypeAlias
 
-from core.dispatcher import MessageContext, MessageHandler
+from core.context.event_context import EventContext
+from core.dispatcher import MessageHandler
 
-HandlerFunc: TypeAlias = Callable[[MessageContext], Awaitable[None]]
+HandlerFunc: TypeAlias = Callable[[EventContext], Awaitable[None]]
 
 
 class Router:

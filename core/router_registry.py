@@ -27,3 +27,10 @@ def get_all_handlers() -> list[MessageHandler]:
     for router in _registered_routers:
         handlers.extend(router.get_handlers())
     return handlers
+
+
+def get_all_routers() -> list[Router]:
+    """
+    Get a list of all registered routers.
+    """
+    return _registered_routers
