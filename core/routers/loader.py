@@ -1,5 +1,5 @@
 from core.dispatcher import MessageHandler
-from core.router import Router
+from core.routers.router import Router
 
 # TODO: rewrite this module to a class-based implementation
 _registered_routers: list[Router] = []

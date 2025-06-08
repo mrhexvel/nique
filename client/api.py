@@ -9,19 +9,16 @@ from config.logger import setup_logger
 setup_logger()
 
 
-class BaseClient:
+class API:
     def __init__(
         self,
         access_token: str,
         session: Optional[niquests.AsyncSession] = None,
         api_version: str = "5.199",
-        base_url: str = "https://api.vk.com/method",
         max_retries: int = 3,
         timeout_seconds: float = 10.0,
     ):
         self.access_token = access_token
-        self.api_version = api_version
-        self.base_url = base_url
         self.max_retries = max_retries
         self.timeout_seconds = timeout_seconds
         self.session = session or niquests.AsyncSession()
@@ -29,7 +26,10 @@ class BaseClient:
         self._is_group_token: Optional[bool] = None
         self._lp_data: Optional[dict] = None
 
-    async def __aenter__(self) -> "BaseClient":
+        self._base_url = "https://api.vk.com/method"
+        self._api_version = api_version
+
+    async def __aenter__(self) -> "API":
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -46,13 +46,13 @@ class BaseClient:
         """
         copied_params = params.copy()
         copied_params["access_token"] = self.access_token
-        copied_params["v"] = self.api_version
+        copied_params["v"] = self._api_version
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 async with asyncio.timeout(self.timeout_seconds):
                     response = await self.session.post(
-                        f"{self.base_url}/{method}", data=copied_params
+                        f"{self._base_url}/{method}", data=copied_params
                     )
 
                     if not response.ok:
@@ -65,7 +65,7 @@ class BaseClient:
                 if "error" in data:
                     error = data["error"]
                     raise Exception(
-                        f"[VK API] error {error.get('error_code')}: {error.get('error_msg')}"
+                        f"[VK API] error {error.get('error_code')}: {error.get('error_msg')} | {method}"
                     )
 
                 return data.get("response", {})
@@ -82,12 +82,23 @@ class BaseClient:
 
     # TODO: потом перенести в другой модуль
     async def get_message_by_id(
-        self, message_id: int, extended: int = 1
+        self,
+        message_id: Optional[int] = None,
+        extended: int = 1,
+        peer_id: Optional[int] = None,
+        cmids: Optional[str] = None,
     ) -> dict[str, Any]:
         params = {
-            "message_ids": str(message_id),
             "extended": str(extended),
         }
+
+        if message_id:
+            params["message_ids"] = message_id
+
+        if self._is_group_token:
+            params["peer_id"] = peer_id
+            params["cmids"] = cmids
+
         response = await self.request("messages.getById", params)
         if response.get("items"):
             return response["items"][0]
@@ -127,7 +138,7 @@ class BaseClient:
         token_type = await self.detect_token_type()
 
         if token_type == "group":
-            group_id = (await self.request("groups.getById", {}))[0]["id"]
+            group_id = (await self.request("groups.getById", {}))["groups"][0]["id"]
             data = await self.request(
                 "groups.getLongPollServer", {"group_id": group_id}
             )
@@ -164,9 +175,13 @@ class BaseClient:
             "wait": 25,
         }
 
-        response = await self.session.get(
-            f"https://{self._lp_data['server']}", params=params
+        url = (
+            self._lp_data["server"]
+            if self._is_group_token
+            else f"https://{self._lp_data['server']}"
         )
+
+        response = await self.session.get(url, params=params)
 
         data = response.json()
 

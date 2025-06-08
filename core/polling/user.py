@@ -1,13 +1,11 @@
 from typing import Any, AsyncGenerator, Dict
 
-from loguru import logger
-
-from client.base import BaseClient
-from core.longpoll.base import LongPollProvider
+from client.api import API
+from core.polling.base import LongPollProvider
 
 
 class UserLongPollProvider(LongPollProvider):
-    def __init__(self, client: BaseClient):
+    def __init__(self, client: API):
         self.client = client
 
     async def listen(self) -> AsyncGenerator[Dict[str, Any], None]:

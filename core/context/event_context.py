@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional
 
+from core.message_queue.worker import enqueue_message
 from models.events import NormalizedMessageEvent
 from utils.random_id import generate_random_id
 
 if TYPE_CHECKING:
-    from client.base import BaseClient
+    from client.api import API
 
 
 class EventContext:
@@ -15,7 +16,7 @@ class EventContext:
     def __init__(
         self,
         event: NormalizedMessageEvent,
-        client: BaseClient,
+        client: API,
         raw_event: Optional[dict[str, Any]] = None,
     ) -> None:
         self.event = event
@@ -49,7 +50,7 @@ class EventContext:
         return self.event.from_id
 
     @property
-    def client(self) -> BaseClient:
+    def client(self) -> API:
         """VK API client instance"""
         return self._client
 
@@ -131,14 +132,24 @@ class EventContext:
 
     async def answer(self, text: str) -> None:
         """Send a text reply to the message sender"""
-        await self._client.request(
-            "messages.send",
-            {
-                "peer_id": self.peer_id,
-                "message": text,
-                "random_id": generate_random_id(),
-            },
-        )
+        payload = {
+            "peer_id": self.peer_id,
+            "message": text,
+            "random_id": generate_random_id(),
+        }
+
+        await enqueue_message("messages.send", payload)
+
+    async def reply(self, text: str) -> None:
+        """Send a text reply to the message sender"""
+        payload = {
+            "peer_id": self.peer_id,
+            "message": text,
+            "random_id": generate_random_id(),
+            "reply_to": self.message_id,
+        }
+
+        await enqueue_message("messages.send", payload)
 
     async def send_sticker(self, sticker_id: int) -> None:
         """Send a sticker to the message sender"""
