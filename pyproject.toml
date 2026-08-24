@@ -1,12 +1,48 @@
 [project]
-name = "vklib"
-version = "0.1.0"
-description = "Library for vk api"
+name = "nique"
+version = "0.2.0"
+description = "Typed asynchronous VK API SDK and bot framework"
 readme = "README.md"
+authors = [
+    { name = "mrhexvel", email = "mr.hexvel@gmail.com" }
+]
 requires-python = ">=3.12"
 dependencies = [
-    "loguru>=0.7.3",
-    "niquests>=3.14.1",
-    "pydantic>=2.11.5",
-    "python-dotenv>=1.1.0",
+    "aiofiles>=24.1",
+    "niquests>=3.14",
+    "pydantic>=2.11",
 ]
+
+[project.optional-dependencies]
+httpx = ["httpx>=0.28"]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1",
+    "pytest-asyncio>=0.25",
+    "pytest>=8.3",
+    "ruff>=0.11",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.18,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["manual: requires live VK credentials"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "RUF"]
+ignore = ["ASYNC109"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["src", "tests"]
+reportMissingTypeStubs = false
