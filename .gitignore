@@ -9,3 +9,10 @@ wheels/
 # Virtual environments
 .venv
 .env
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.DS_Store
+.nique/
